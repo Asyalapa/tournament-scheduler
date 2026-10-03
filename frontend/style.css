@@ -402,3 +402,31 @@ tbody tr:last-child > * {
     scroll-behavior: auto !important;
   }
 }
+
+/* ---------- Предупреждения, оглавление этапов, подсказки ---------- */
+.notice {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-input);
+  background: var(--surface-2);
+  font-size: 0.875rem;
+}
+.toc {
+  margin: 0 0 1.25rem;
+}
+.toc ol {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--muted);
+  font-size: 0.9375rem;
+}
+.tag,
+.hint-small {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+.match + .match {
+  margin-top: 0.5rem;
+}

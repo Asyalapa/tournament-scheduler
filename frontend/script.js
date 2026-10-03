@@ -18,7 +18,7 @@ const TOURNAMENT_SYSTEMS = {
     id: 'olympic',
     name: 'Олимпийская система (на вылет)',
     description: 'Проигравший выбывает из турнира',
-    enabled: false,
+    enabled: true,
     minTeams: 2,
   },
   swiss: {
@@ -77,9 +77,11 @@ const el = {
   section: $('result-section'),
   reset: $('reset'),
   theme: $('theme-toggle'),
+  export: $('export'),
 };
 const EMPTY_HTML = el.result.innerHTML;
 const MIN_TEAMS = 2;
+let lastSchedule = null; // последнее успешно полученное расписание (для экспорта)
 
 let teams = store.get('teams', ['', '']);
 if (!Array.isArray(teams) || teams.length < MIN_TEAMS) teams = ['', ''];
@@ -305,17 +307,25 @@ el.form.addEventListener('submit', async (e) => {
   }
 });
 
-function renderResult({ schedule, stats }) {
-  // const pct = Math.round((stats.efficiency ?? 0) * 100);
+function renderResult({ schedule, stats, warnings = [], stages = [] }) {
   const items = [
     ['Матчей', stats.total_matches],
     ['Слотов', stats.total_slots],
     ['Пауз', stats.rest_slots],
-    // ['Эффективность', `${pct}%`],
   ];
+  const hasStages = stages.length > 0; // этапы бывают только у систем на вылет
 
   const wrap = document.createElement('div');
   wrap.className = 'result';
+
+  // Вынужденные паузы объясняем словами; role=status — скринридер озвучит вежливо
+  warnings.forEach((text) => {
+    const p = document.createElement('p');
+    p.className = 'notice';
+    p.setAttribute('role', 'status');
+    p.textContent = text;
+    wrap.append(p);
+  });
 
   const dl = document.createElement('dl');
   dl.className = 'stats';
@@ -327,6 +337,39 @@ function renderResult({ schedule, stats }) {
     d.lastChild.textContent = v;
     dl.append(d);
   });
+  wrap.append(dl);
+
+  // Оглавление: с какого этапа начинается турнир и когда идёт каждый
+  if (hasStages) {
+    const nav = document.createElement('nav');
+    nav.className = 'toc';
+    nav.setAttribute('aria-label', 'Этапы турнира');
+    const ol = document.createElement('ol');
+    stages.forEach((st) => {
+      const li = document.createElement('li');
+      const range =
+        st.first_slot === st.last_slot
+          ? `слот ${st.first_slot}`
+          : `слоты ${st.first_slot}–${st.last_slot}`;
+      li.textContent = `${st.name} · ${range} · матчей: ${st.matches}`;
+      ol.append(li);
+    });
+    nav.append(ol);
+    wrap.append(nav);
+  }
+
+  // Название команды + мелкая подсказка «кто может там оказаться»
+  const side = (label, hint) => {
+    const frag = document.createDocumentFragment();
+    frag.append(label);
+    if (hint) {
+      const small = document.createElement('small');
+      small.className = 'hint-small';
+      small.textContent = ` (${hint})`;
+      frag.append(small);
+    }
+    return frag;
+  };
 
   const rows = schedule.map((s) => {
     const tr = document.createElement('tr');
@@ -336,10 +379,17 @@ function renderResult({ schedule, stats }) {
     const td = document.createElement('td');
     if (s.type === 'match' && s.matches.length) {
       s.matches.forEach((m) => {
-        const div = document.createElement('span');
-        div.className = 'match';
-        div.textContent = `${m.team1} — ${m.team2}`; // textContent: названия команд вводит пользователь, XSS нам не нужен
-        td.append(div);
+        const row = document.createElement('span');
+        row.className = 'match';
+        if (m.stage) {
+          const tag = document.createElement('small');
+          tag.className = 'tag';
+          tag.textContent = `Матч ${m.number} · ${m.stage}`;
+          row.append(tag, document.createElement('br'));
+        }
+        // append(string) = текстовый узел: названия вводит пользователь, XSS нам не нужен
+        row.append(side(m.team1, m.hint1), ' — ', side(m.team2, m.hint2));
+        td.append(row);
       });
     } else {
       tr.className = 'rest';
@@ -350,8 +400,8 @@ function renderResult({ schedule, stats }) {
   });
 
   const table = document.createElement('table');
-  table.innerHTML =
-    '<thead><tr><th scope="col">Слот</th><th scope="col">Матчи</th></tr></thead><tbody></tbody>';
+  const matchHeader = hasStages ? 'Матчи' : 'Матчи (хозяева — гости)'; // первая в паре принимает матч
+  table.innerHTML = `<thead><tr><th scope="col">Слот</th><th scope="col">${matchHeader}</th></tr></thead><tbody></tbody>`;
   table.tBodies[0].append(...rows);
   const tw = document.createElement('div');
   tw.className = 'table-wrap';
@@ -360,18 +410,54 @@ function renderResult({ schedule, stats }) {
   tw.setAttribute('aria-label', 'Таблица расписания');
   tw.append(table);
 
-  wrap.append(dl, tw);
+  wrap.append(tw);
   el.result.replaceChildren(wrap);
   el.reset.hidden = false;
   el.section.scrollIntoView({
     behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
     block: 'start',
   });
+  lastSchedule = schedule;
+  el.export.disabled = false;
 }
+
+/* =========================================================
+ * Экспорт в CSV. Разделитель «;» + BOM: Excel в русской локали
+ * открывает файл без «кракозябр» и раскладывает по колонкам.
+ * ======================================================= */
+function csvCell(value) {
+  let text = String(value);
+  if (/^[=+\-@]/.test(text)) text = `'${text}`;
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function exportToCSV(schedule) {
+  const rows = [['Слот', 'Тип', 'Этап', 'Хозяева / Команда 1', 'Гости / Команда 2']];
+  schedule.forEach((s) => {
+    if (s.type === 'rest') rows.push([s.slot, 'Пауза', '', '', '']);
+    else s.matches.forEach((m) => rows.push([s.slot, 'Матч', m.stage || '', m.team1, m.team2]));
+  });
+
+  const csv = '\uFEFF' + rows.map((r) => r.map(csvCell).join(';')).join('\r\n');
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `tournament_schedule_${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000); // не сразу: часть браузеров ещё читает blob
+}
+
+el.export.addEventListener('click', () => {
+  if (lastSchedule) exportToCSV(lastSchedule);
+});
 
 el.reset.addEventListener('click', () => {
   el.result.innerHTML = EMPTY_HTML;
   el.reset.hidden = true;
+  lastSchedule = null;
+  el.export.disabled = true;
   el.teams.querySelector('input')?.focus();
 });
 
