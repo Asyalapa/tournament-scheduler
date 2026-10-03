@@ -1,11 +1,10 @@
-MAX_TEAMS = 30
 MAX_FIELDS = 50
 MAX_NAME_LEN = 60
 
 
 def validate_request(data, systems):
     """
-    systems: {id: min_teams} только для РЕАЛИЗОВАННЫХ на бэке систем.
+    systems: {id: (min_teams, max_teams)} только для РЕАЛИЗОВАННЫХ на бэке систем.
     Возвращает (clean, None) или (None, "сообщение человеческим языком").
     Фронт валидирует для UX, бэк — для безопасности: клиенту не доверяем.
     """
@@ -21,10 +20,11 @@ def validate_request(data, systems):
         return None, "Список команд передан в неверном формате"
 
     teams = [t.strip() for t in raw if t.strip()]
-    if len(teams) < systems[system]:
-        return None, f"Нужно ввести минимум {systems[system]} команды"
-    if len(teams) > MAX_TEAMS:
-        return None, f"Максимум {MAX_TEAMS} команд"
+    lo, hi = systems[system]
+    if len(teams) < lo:
+        return None, f"Нужно ввести минимум {lo} команды"
+    if len(teams) > hi:
+        return None, f"Для этой системы максимум {hi} команд"
     if any(len(t) > MAX_NAME_LEN for t in teams):
         return None, f"Название команды — не длиннее {MAX_NAME_LEN} символов"
     if len({t.casefold() for t in teams}) != len(teams):
@@ -40,7 +40,7 @@ def validate_request(data, systems):
 
 
 def verify_schedule(schedule, fields, matches):
-    """Страховочная проверка результата. Возвращает список нарушений (пустой = ок)."""
+    """Страховочная проверка результата. Возвращает список нарушений"""
     errors = []
     prev = set()
     for i, slot in enumerate(schedule, 1):
