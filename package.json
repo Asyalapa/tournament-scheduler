@@ -1,13 +1,12 @@
 {
-  "name": "schedule",
-  "version": "1.0.0",
-  "description": "Веб-приложение для автоматической генерации расписания спортивных турниров.",
-  "main": "index.js",
+  "name": "tournament-scheduler",
+  "version": "0.1.0",
+  "description": "Веб-приложение для автоматической генерации расписания спортивных турниров. | Web app for automatic sports tournament schedule generation.",
   "scripts": {
     "start": "python backend/app.py",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "echo \"No tests yet\" && exit 0",
     "lint": "ruff check backend/ && eslint frontend/",
-    "lint:fix": "eslint frontend/ --fix",
+    "lint:fix": "eslint frontend/ --fix && ruff check backend/ --fix",
     "format": "prettier --write . && ruff format backend/",
     "check": "ruff check backend/ && ruff format --check backend/ && prettier --check . && eslint frontend/"
   },
@@ -15,9 +14,15 @@
     "type": "git",
     "url": "git+https://github.com/Asyalapa/tournament-scheduler.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "tournament",
+    "scheduler",
+    "sports",
+    "flask",
+    "round-robin"
+  ],
+  "author": "Asya",
+  "license": "MIT",
   "type": "commonjs",
   "bugs": {
     "url": "https://github.com/Asyalapa/tournament-scheduler/issues"
