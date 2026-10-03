@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <meta
+      name="description"
+      content="Составьте расписание спортивного турнира за несколько секунд"
+    />
+    <title>Генератор расписания турниров</title>
+
+    <script>
+      try {
+        const t =
+          localStorage.getItem('theme') ||
+          (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
+
+    <link rel="stylesheet" href="style.css" />
+
+    <link rel="icon" type="image/x-icon" href="./imgs/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="./imgs/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="./imgs/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./imgs/apple-touch-icon.png" />
+    <link rel="manifest" href="./imgs/site.webmanifest" />
+    <meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0f0f13" media="(prefers-color-scheme: dark)" />
+  </head>
+
+  <body>
+    <a class="skip-link" href="#form-title">Перейти к форме</a>
+
+    <header class="header">
+      <div class="container header__inner">
+        <h1 class="header__title">Генератор расписания турниров</h1>
+        <!-- aria-pressed + динамический aria-label: скринридер озвучит и состояние, и действие -->
+        <button
+          type="button"
+          id="theme-toggle"
+          class="icon-btn"
+          aria-pressed="false"
+          aria-label="Тёмная тема"
+        >
+          <svg class="icon icon--moon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path
+              d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linejoin="round"
+            />
+          </svg>
+          <svg class="icon icon--sun" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <circle cx="12" cy="12" r="4" />
+              <path
+                d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"
+              />
+            </g>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="container layout">
+      <section class="card" aria-labelledby="form-title">
+        <h2 id="form-title" class="card__title">Параметры турнира</h2>
+
+        <form id="form" novalidate>
+          <fieldset class="field">
+            <legend class="label">Команды</legend>
+            <ul id="teams" class="teams"></ul>
+            <p id="teams-error" class="error" role="alert"></p>
+            <button type="button" id="add-team" class="btn btn--ghost">+ Добавить команду</button>
+          </fieldset>
+
+          <div class="field">
+            <label class="label" for="system">Система турнира</label>
+            <select id="system" class="input" aria-describedby="system-hint"></select>
+            <p id="system-hint" class="hint"></p>
+          </div>
+
+          <div class="field">
+            <label class="label" for="fields">Сколько матчей может идти одновременно?</label>
+            <input
+              id="fields"
+              class="input input--short"
+              type="number"
+              min="1"
+              inputmode="numeric"
+              placeholder="2"
+              aria-describedby="fields-hint"
+            />
+            <p id="fields-hint" class="hint">Минимум 1. Например, если у вас 2 поля — укажите 2</p>
+          </div>
+
+          <button type="submit" id="submit" class="btn btn--primary">Составить расписание</button>
+          <p class="hint hint--kbd">Быстрая отправка: Ctrl + Enter (⌘ + Enter на Mac)</p>
+        </form>
+      </section>
+
+      <!-- aria-live: скринридер сам озвучит появление результата или ошибки -->
+      <section
+        class="card"
+        aria-labelledby="result-title"
+        aria-live="polite"
+        aria-busy="false"
+        id="result-section"
+      >
+        <div class="card__head">
+          <h2 id="result-title" class="card__title">Расписание</h2>
+          <div class="actions">
+            <button
+              type="button"
+              id="export"
+              class="btn btn--ghost"
+              disabled
+              title="Функция в разработке"
+            >
+              Экспорт в CSV
+            </button>
+            <button type="button" id="reset" class="btn btn--ghost" hidden>Сбросить</button>
+          </div>
+        </div>
+        <div id="result">
+          <p class="empty">Заполните форму и нажмите «Составить расписание»</p>
+        </div>
+      </section>
+    </main>
+
+    <script src="./script.js"></script>
+  </body>
+</html>
