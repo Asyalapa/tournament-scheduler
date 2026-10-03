@@ -25,8 +25,22 @@
 
 ## Запуск
 
-```text
-python -m venv backend/venv && backend/venv/Scripts/activate && pip install -r backend/requirements.txt
+Windows (Git Bash):
+
+```bash
+python -m venv backend/venv
+source backend/venv/Scripts/activate
+pip install -r backend/requirements.txt
+npm install
+npm start
+```
+
+Linux / macOS:
+
+```bash
+python3 -m venv backend/venv
+source backend/venv/bin/activate
+pip install -r backend/requirements.txt
 npm install
 npm start
 ```
