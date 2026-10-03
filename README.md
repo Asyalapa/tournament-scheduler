@@ -11,6 +11,7 @@
 - Экспорт в JSON
 
 Усложнения:
+
 - Олимпийская система, швейцарка, двойное выбывание
 - Обеденный перерыв (в работе)
 - Переход на следующий день
@@ -22,8 +23,17 @@
 - Frontend: HTML + CSS + чистый JS
 - Без БД (stateless API)
 
+## Запуск
+
+```text
+python -m venv backend/venv && backend/venv/Scripts/activate && pip install -r backend/requirements.txt
+npm install
+npm start
+```
+
 ## Структура
 
+```text
 tournament-scheduler/
 ├── backend/
 │   ├── app.py
@@ -36,3 +46,4 @@ tournament-scheduler/
     ├── index.html
     ├── style.css
     └── script.js
+```
