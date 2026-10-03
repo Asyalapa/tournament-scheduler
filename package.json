@@ -1,0 +1,32 @@
+{
+  "name": "schedule",
+  "version": "1.0.0",
+  "description": "Веб-приложение для автоматической генерации расписания спортивных турниров.",
+  "main": "index.js",
+  "scripts": {
+    "start": "python backend/app.py",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "ruff check backend/ && eslint frontend/",
+    "lint:fix": "eslint frontend/ --fix",
+    "format": "prettier --write . && ruff format backend/",
+    "check": "ruff check backend/ && ruff format --check backend/ && prettier --check . && eslint frontend/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Asyalapa/tournament-scheduler.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Asyalapa/tournament-scheduler/issues"
+  },
+  "homepage": "https://github.com/Asyalapa/tournament-scheduler#readme",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.12.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.9.9"
+  }
+}
